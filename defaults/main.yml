@@ -1,0 +1,5 @@
+---
+# defaults file for rt
+rtbase: "/vagrant/vendor/rt"
+rtversion: "rt-4.4.4"
+rthome: "/vagrant/vendor/rt"

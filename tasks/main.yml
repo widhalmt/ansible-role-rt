@@ -1,0 +1,171 @@
+---
+# tasks file for rt
+- name: Install packages
+  package:
+    name:
+      - apt-utils 
+      - autoconf 
+      - build-essential 
+      - locales 
+      - cpanminus 
+      - libmysqlclient-dev 
+      - libmysqlclient20 
+      - git 
+      - vim 
+      - postfix 
+      - sqlite 
+      - libhtml-mason-perl 
+      - libapache-session-perl 
+      - libregexp-common-perl 
+      - libdbi-perl 
+      - libdbix-searchbuilder-perl 
+      - libtext-template-perl 
+      - liblog-dispatch-perl 
+      - liblocale-maketext-fuzzy-perl 
+      - liblocale-maketext-lexicon-perl 
+      - libmime-tools-perl 
+      - libmime-types-perl 
+      - libmailtools-perl 
+      - libtext-wrapper-perl 
+      - libtime-modules-perl 
+      - libtext-autoformat-perl 
+      - libtext-wikiformat-perl 
+      - libhtml-scrubber-perl 
+      - libmodule-versions-report-perl 
+      - libtree-simple-perl 
+      - libxml-rss-perl 
+      - libxml-simple-perl 
+      - libgd-graph-perl 
+      - libuniversal-require-perl 
+      - libgd-text-perl 
+      - libtimedate-perl 
+      - libfile-sharedir-perl 
+      - libemail-address-perl 
+      - libperlio-eol-perl 
+      - libdata-ical-perl 
+      - libtext-quoted-perl 
+      - libhtml-rewriteattributes-perl 
+      - libgraphviz-perl 
+      - libgnupg-interface-perl 
+      - libencode-perl 
+      - libcgi-pm-perl 
+      - libfcgi-procmanager-perl 
+      - libdatetime-perl 
+      - libdatetime-locale-perl 
+      - libhtml-quoted-perl 
+      - libfile-temp-perl 
+      - libtext-password-pronounceable-perl 
+      - libdevel-globaldestruction-perl 
+      - liblist-moreutils-perl 
+      - libnet-cidr-perl 
+      - libregexp-common-net-cidr-perl 
+      - libregexp-ipv6-perl 
+      - libjson-perl 
+      - libipc-run3-perl 
+      - libcgi-psgi-perl 
+      - libhtml-mason-psgihandler-perl 
+      - libplack-perl 
+      - libcgi-emulate-psgi-perl 
+      - libconvert-color-perl 
+      - libclass-accessor-perl 
+      - liburi-perl 
+      - libipc-run-perl 
+      - libcrypt-eksblowfish-perl 
+      - libdata-guid-perl 
+      - libdate-extract-perl 
+      - libdate-manip-perl 
+      - libdatetime-format-natural-perl 
+      - libemail-address-list-perl 
+      - libhtml-formattext-withlinks-perl 
+      - libhtml-formattext-withlinks-andtables-perl 
+      - libhttp-message-perl 
+      - libwww-perl 
+      - libmodule-refresh-perl 
+      - librole-basic-perl 
+      - libsymbol-global-name-perl 
+      - libfile-which-perl 
+      - libcrypt-x509-perl 
+      - libstring-shellquote-perl 
+      - libcrypt-ssleay-perl 
+      - libcss-squish-perl 
+      - libdatetime-locale-perl 
+      - libdatetime-perl 
+      - libnet-ssleay-perl 
+      - libnet-ldap-perl 
+      - libredis-perl
+- name: Create directory for installation files
+  file:
+     path: /usr/src/rt
+     state: directory
+     owner: root
+     group: root
+     mode: 0775
+- name: Place CPAN File
+  copy:
+    src: cpanfile
+    dest: /usr/src/rt/
+    owner: root
+    group: root
+    mode: 0660
+- name: Install dependencies via CPAN
+  shell: cpanm --notest --installdeps /usr/src/rt/
+  changed_when: false
+  vars:
+    ansible_command_timeout: 1200
+- name: Clone git repository with modified RT
+  git:
+    repo: https://github.com/NETWAYS/rt4vagrant.git
+    dest: /vagrant
+    version: master
+    update: no
+- name: Place .tag
+  template:
+    src: tag.j2
+    dest: "{{ rtbase }}/.tag"
+- name: Place profile file
+  template:
+    src: rt.sh.j2
+    dest: /etc/profile.d/rt.sh
+- name: Run autoconf
+  shell:
+    chdir: "{{ rtbase }}"
+    cmd: autoconf -f
+  args:
+    creates: /vagrant/vendor/rt/configure
+- name: Run configure
+  shell:
+    chdir: "{{ rtbase }}"
+    cmd: ./configure --enable-layout=inplace --prefix=$RTBASE --enable-graphviz --enable-gd --enable-gpg --enable-smime --enable-developer --enable-externalauth --with-web-handler=standalone --with-db-type=SQLite
+  args:
+    creates: /vagrant/vendor/rt/Makefile
+- name: Create gpg directory
+  file:
+    state: directory
+    path: "{{ rtbase }}/var/data/gpg"
+- name: Create smime directory
+  file:
+    state: directory
+    path: "{{ rtbase }}/var/data/smime"
+- name: Create Shredder directory
+  file:
+    state: directory
+    path: "{{ rtbase }}/var/data/RT-Shredder"
+- name: Create session_data directory
+  file:
+    state: directory
+    path: "{{ rtbase }}/var/session_data"
+# missing:
+# if [[ ! -f $RTBASE/var/rt4 ]]; then
+#  sbin/rt-setup-database \
+#    --action init \
+#    --force --dba="" \
+#    --dba-password=""
+#  fi
+
+- name: Place startup script
+  template:
+    src: start-rt.sh.j2
+    dest: /usr/local/sbin/start-rt
+    owner: root
+    group: root
+    mode: 0755
