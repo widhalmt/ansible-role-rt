@@ -3,3 +3,5 @@
 rtbase: "/vagrant/vendor/rt"
 rtversion: "rt-4.4.4"
 rthome: "/vagrant/vendor/rt"
+rtname: "rt4-dev.vagrant.dev.netways.de"
+rt_organization: "netways.de"

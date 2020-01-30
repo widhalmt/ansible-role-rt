@@ -162,6 +162,10 @@
 #    --dba-password=""
 #  fi
 
+- name: Place RT config
+  template:
+    src: RT_SiteConfig.pm.j2
+    dest: "{{ rtbase }}/etc/RT_SiteConfig.pm"
 - name: Place startup script
   template:
     src: start-rt.sh.j2
